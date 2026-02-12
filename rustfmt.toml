@@ -1,0 +1,5 @@
+edition = "2024"
+# Keep import ordering explicit for consistency.
+reorder_imports = true
+reorder_modules = true
+style_edition   = "2024"

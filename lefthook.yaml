@@ -1,0 +1,39 @@
+pre-commit:
+  parallel: true
+  commands:
+    toml-hygiene:
+      glob: "{*.toml,**/*.toml}"
+      run: toml-sort --in-place --all --trailing-comma-inline-array {staged_files} && taplo format {staged_files}
+      stage_fixed: true
+
+    markdownlint:
+      glob: "**/*.md"
+      run: markdownlint --fix {staged_files}
+      stage_fixed: true
+
+    yamlfmt:
+      glob: "**/*.{yaml,yml}"
+      run: yamlfmt {staged_files}
+      stage_fixed: true
+
+    yamllint:
+      glob: "**/*.{yaml,yml}"
+      run: yamllint {staged_files}
+
+    rustfmt:
+      run: cargo fmt
+      stage_fixed: true
+
+    shfmt:
+      glob: "**/*.{sh,bash,zsh}"
+      run: shfmt -w -s -i 2 {staged_files}
+      stage_fixed: true
+
+    typos:
+      run: typos
+      stage_fixed: true
+
+commit-msg:
+  commands:
+    commitlint:
+      run: NODE_PATH="$(mise where 'npm:@commitlint/config-conventional')/lib/node_modules" "$(mise where 'npm:@commitlint/cli')/bin/commitlint" --edit {1}
