@@ -1,3 +1,5 @@
+use poiesisd::dto::TesState;
+
 fn main() {
-    println!("Hello, world!");
+    println!("{:?}", TesState::Complete);
 }
