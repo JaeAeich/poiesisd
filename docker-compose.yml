@@ -1,0 +1,49 @@
+services:
+  garage:
+    image: dxflrs/garage:v2.2.0
+    container_name: garage
+    ports:
+      - "9000:3900"
+      - "3901:3901"
+      - "3902:3902"
+      - "3903:3903"
+    volumes:
+      - ./s3/garage.toml:/etc/garage.toml:ro
+      - garage-meta:/var/lib/garage/meta
+      - garage-data:/var/lib/garage/data
+    environment:
+      - RUST_LOG=garage=info
+
+  garage-init:
+    build:
+      context: .
+      dockerfile: s3/garage-init/Dockerfile
+    image: poiesisd-garage-init:local
+    container_name: garage-init
+    depends_on:
+      - garage
+    volumes:
+      - ./s3/garage.toml:/etc/garage.toml:ro
+      - garage-meta:/var/lib/garage/meta
+      - garage-data:/var/lib/garage/data
+    restart: "no"
+
+  # c.f. https://git.deuxfleurs.fr/Deuxfleurs/garage-webadmin
+  garage-webui:
+    image: khairul169/garage-webui:1.1.0
+    container_name: garage-webui
+    depends_on:
+      - garage
+    ports:
+      - "3909:3909"
+    volumes:
+      - ./s3/garage.toml:/etc/garage.toml:ro
+    environment:
+      API_BASE_URL: "http://garage:3903"
+      S3_ENDPOINT_URL: "http://garage:3900"
+      AUTH_USER_PASS: "admin:$$2y$$10$$Nry6jek4nDhgM/LbFDloxe5Q/ln7hiD7YHN3s2gV.7tQVU898YuMq"
+    restart: unless-stopped
+
+volumes:
+  garage-meta:
+  garage-data:

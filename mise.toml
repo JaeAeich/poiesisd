@@ -1,6 +1,12 @@
 [env]
-_.file   = ".env"
-_.source = ".envrc"
+S3_ACCESS_KEY_ID = "GKcafebabe00000000cafebabe"
+S3_BUCKET        = "data"
+# S3/Garage defaults (can be overridden in .env)
+S3_ENDPOINT          = "http://localhost:9000"
+S3_REGION            = "us-east-1"
+S3_SECRET_ACCESS_KEY = "cafebabe00000000cafebabe00000000cafebabe00000000cafebabe00000000"
+_.file               = ".env"
+_.source             = ".envrc"
 
 [shell_alias]
 mr = "mise run"
@@ -9,6 +15,18 @@ mr = "mise run"
 alias       = [ "f" ]
 description = "Run repo hygiene on all files"
 run         = "lefthook run pre-commit --all-files"
+
+[tasks.s3-down]
+description = "Stop Garage S3 container"
+run         = "docker compose down"
+
+[tasks.s3-reset]
+description = "Reset Garage (delete all data)"
+run         = "docker compose down -v && docker compose up -d"
+
+[tasks.s3-up]
+description = "Start Garage S3 container"
+run         = "docker compose up -d"
 
 [tools]
 lefthook                              = "2.1.1"
