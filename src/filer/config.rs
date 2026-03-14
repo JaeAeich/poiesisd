@@ -1,15 +1,15 @@
 use serde::Deserialize;
-use std::path::PathBuf;
 
 #[derive(Debug, Deserialize)]
 pub struct FilerConfig {
-    pub storage: StorageConfig,
+    pub backend: BackendConfig,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct StorageConfig {
-    pub s3: Option<S3Config>,
-    pub local: Option<LocalConfig>,
+#[serde(tag = "type")]
+pub enum BackendConfig {
+    #[serde(rename = "s3")]
+    S3(S3Config),
 }
 
 #[derive(Debug, Deserialize)]
@@ -18,13 +18,7 @@ pub struct S3Config {
     pub region: Option<String>,
     pub access_key_id: String,
     pub secret_access_key: String,
-    #[serde(default)]
-    pub allow_anonymous: bool,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct LocalConfig {
-    pub root: PathBuf,
+    pub bucket: String,
 }
 
 #[cfg(test)]
@@ -34,16 +28,19 @@ mod tests {
     #[test]
     fn test_parse_config() {
         let yaml = r#"
-storage:
-  s3:
-    endpoint: http://localhost:9000
-    access_key_id: minioadmin
-    secret_access_key: minioadmin
-  local:
-    root: /data
+backend:
+  type: s3
+  endpoint: http://localhost:9000
+  access_key_id: adminadmin
+  secret_access_key: adminadmin
+  bucket: data
 "#;
         let config: FilerConfig = serde_yaml::from_str(yaml).unwrap();
-        assert!(config.storage.s3.is_some());
-        assert!(config.storage.local.is_some());
+        match &config.backend {
+            BackendConfig::S3(s3) => {
+                assert_eq!(s3.bucket, "data");
+                assert_eq!(s3.endpoint.as_deref(), Some("http://localhost:9000"));
+            }
+        }
     }
 }

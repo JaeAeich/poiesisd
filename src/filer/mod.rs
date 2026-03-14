@@ -1,12 +1,14 @@
-mod backends;
+mod backend;
 mod config;
 mod error;
+#[allow(clippy::module_inception)]
+mod filer;
 mod input;
-mod manager;
 mod output;
-mod storage;
+mod url;
+mod util;
 
-pub use config::{FilerConfig, LocalConfig, S3Config, StorageConfig};
+pub use backend::S3Backend;
+pub use config::{BackendConfig, FilerConfig, S3Config};
 pub use error::{FilerError, Result};
-pub use manager::Filer;
-pub use storage::Storage;
+pub use filer::Filer;

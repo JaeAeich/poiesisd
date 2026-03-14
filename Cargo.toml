@@ -1,22 +1,21 @@
 [dependencies]
-async-trait = "0.1"
-bytes       = "1"
-chrono      = { features = [ "serde" ], version = "0.4.43" }
-futures     = "0.3"
-glob        = "0.3"
-opendal     = { features = [ "services-fs", "services-s3" ], version = "0.51" }
-serde       = { features = [ "derive" ], version = "1.0.228" }
-serde_json  = "1.0.149"
-serde_yaml  = "0.9"
-thiserror   = "2"
-tokio       = { features = [ "full" ], version = "1" }
-tracing     = "0.1"
-url         = "2"
-utoipa      = { features = [ "macros" ], version = "5.4.0" }
+aws-config = "1"
+aws-sdk-s3 = "1"
+bytes      = "1"
+chrono     = { features = [ "serde" ], version = "0.4.43" }
+glob       = "0.3"
+serde      = { features = [ "derive" ], version = "1.0.228" }
+serde_json = "1.0.149"
+serde_yaml = "0.9"
+thiserror  = "2"
+tokio      = { features = [ "full" ], version = "1" }
+tracing    = "0.1"
+url        = "2"
+utoipa     = { features = [ "macros" ], version = "5.4.0" }
 
 [[example]]
-name = "filer_minio_test"
-path = "examples/filer_minio_test.rs"
+name = "filer_s3_test"
+path = "examples/filer_s3_test.rs"
 
 [package]
 edition = "2024"

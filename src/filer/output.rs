@@ -1,67 +1,88 @@
 use crate::dto::TesFileType;
 use crate::dto::TesOutput;
+use crate::dto::TesOutputFileLog;
+use crate::filer::backend::StorageBackend;
 use crate::filer::error::{FilerError, Result};
-use crate::filer::storage::{Storage, extract_path};
+use crate::filer::url::{parse_storage_url, warn_bucket_mismatch};
+use crate::filer::util::resolve_workspace_path;
 use std::collections::VecDeque;
 use std::path::Path;
 
 pub async fn collect_output(
-    storage: &dyn Storage,
+    backend: &impl StorageBackend,
     output: &TesOutput,
     workspace: &Path,
-) -> Result<()> {
-    let src_path = resolve_src_path(workspace, &output.path)?;
-
-    if !src_path.exists() {
-        return Err(FilerError::PathNotFound(src_path));
-    }
-
-    let dest_path = extract_path(&output.url)?;
+    scheme: &str,
+    configured_bucket: &str,
+) -> Result<Vec<TesOutputFileLog>> {
+    let src_path = resolve_workspace_path(workspace, &output.path)?;
+    let parsed = parse_storage_url(&output.url)?;
+    warn_bucket_mismatch(parsed.bucket, configured_bucket);
+    let dest_key = parsed.key;
 
     if contains_glob_pattern(&output.path) {
-        collect_glob_output(storage, output, workspace, dest_path).await
-    } else if src_path.is_dir() || output.r#type == Some(TesFileType::Directory) {
-        collect_directory_output(storage, &src_path, dest_path).await
+        collect_glob_output(
+            backend,
+            output,
+            workspace,
+            dest_key,
+            scheme,
+            configured_bucket,
+        )
+        .await
     } else {
-        collect_file_output(storage, &src_path, dest_path).await
+        if !tokio::fs::try_exists(&src_path).await.unwrap_or(false) {
+            return Err(FilerError::PathNotFound(src_path));
+        }
+
+        if tokio::fs::metadata(&src_path).await?.is_dir()
+            || output.r#type == Some(TesFileType::Directory)
+        {
+            collect_directory_output(backend, &src_path, dest_key, scheme, configured_bucket).await
+        } else {
+            let log = collect_file_output(backend, &src_path, dest_key, scheme, configured_bucket)
+                .await?;
+            Ok(vec![log])
+        }
     }
-}
-
-fn resolve_src_path(workspace: &Path, output_path: &str) -> Result<std::path::PathBuf> {
-    let relative = output_path.strip_prefix('/').unwrap_or(output_path);
-
-    let mut src = workspace.to_path_buf();
-    for component in Path::new(relative).components() {
-        src.push(component);
-    }
-
-    Ok(src)
 }
 
 fn contains_glob_pattern(path: &str) -> bool {
-    let chars_to_check = ['*', '?', '['];
-    path.chars().any(|c| chars_to_check.contains(&c))
+    path.contains('*') || path.contains('?') || path.contains('[')
 }
 
-async fn collect_file_output(storage: &dyn Storage, src: &Path, dest: &str) -> Result<()> {
-    let data = tokio::fs::read(src).await.map_err(FilerError::Io)?;
-    storage.put(dest, data.into()).await
+async fn collect_file_output(
+    backend: &impl StorageBackend,
+    src: &Path,
+    dest_key: &str,
+    scheme: &str,
+    bucket: &str,
+) -> Result<TesOutputFileLog> {
+    let data = tokio::fs::read(src).await?;
+    let size = data.len();
+    backend.put(dest_key, data.into()).await?;
+    Ok(TesOutputFileLog::new(
+        format!("{}://{}/{}", scheme, bucket, dest_key),
+        src.to_string_lossy().to_string(),
+        size.to_string(),
+    ))
 }
 
 async fn collect_directory_output(
-    storage: &dyn Storage,
+    backend: &impl StorageBackend,
     src_dir: &Path,
     dest_prefix: &str,
-) -> Result<()> {
+    scheme: &str,
+    bucket: &str,
+) -> Result<Vec<TesOutputFileLog>> {
+    let mut logs = Vec::new();
     let mut queue: VecDeque<(std::path::PathBuf, String)> = VecDeque::new();
     queue.push_back((src_dir.to_path_buf(), dest_prefix.to_string()));
 
     while let Some((current_dir, current_dest)) = queue.pop_front() {
-        let mut entries = tokio::fs::read_dir(&current_dir)
-            .await
-            .map_err(FilerError::Io)?;
+        let mut entries = tokio::fs::read_dir(&current_dir).await?;
 
-        while let Some(entry) = entries.next_entry().await.map_err(FilerError::Io)? {
+        while let Some(entry) = entries.next_entry().await? {
             let entry_path = entry.path();
             let entry_name = entry_path
                 .file_name()
@@ -77,21 +98,25 @@ async fn collect_directory_output(
             if entry_path.is_dir() {
                 queue.push_back((entry_path, entry_dest));
             } else {
-                collect_file_output(storage, &entry_path, &entry_dest).await?;
+                logs.push(
+                    collect_file_output(backend, &entry_path, &entry_dest, scheme, bucket).await?,
+                );
             }
         }
     }
 
-    Ok(())
+    Ok(logs)
 }
 
 async fn collect_glob_output(
-    storage: &dyn Storage,
+    backend: &impl StorageBackend,
     output: &TesOutput,
     workspace: &Path,
     dest_base: &str,
-) -> Result<()> {
-    let pattern = resolve_src_path(workspace, &output.path)?;
+    scheme: &str,
+    bucket: &str,
+) -> Result<Vec<TesOutputFileLog>> {
+    let pattern = resolve_workspace_path(workspace, &output.path)?;
     let pattern_str = pattern
         .to_str()
         .ok_or_else(|| FilerError::GlobPattern("invalid path encoding".into()))?;
@@ -107,6 +132,8 @@ async fn collect_glob_output(
         .to_str()
         .ok_or_else(|| FilerError::GlobPattern("invalid base dir encoding".into()))?;
 
+    let mut logs = Vec::new();
+
     for entry in glob::glob(pattern_str).map_err(|e| FilerError::GlobPattern(e.to_string()))? {
         let entry = entry.map_err(|e| FilerError::GlobPattern(e.to_string()))?;
 
@@ -121,19 +148,20 @@ async fn collect_glob_output(
         };
 
         if entry.is_dir() {
-            collect_directory_output(storage, &entry, &entry_dest).await?;
+            logs.extend(
+                collect_directory_output(backend, &entry, &entry_dest, scheme, bucket).await?,
+            );
         } else {
-            collect_file_output(storage, &entry, &entry_dest).await?;
+            logs.push(collect_file_output(backend, &entry, &entry_dest, scheme, bucket).await?);
         }
     }
 
-    Ok(())
+    Ok(logs)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::path::PathBuf;
 
     #[test]
     fn test_contains_glob_pattern() {
@@ -141,15 +169,5 @@ mod tests {
         assert!(contains_glob_pattern("/data/file?.txt"));
         assert!(contains_glob_pattern("/data/[abc].txt"));
         assert!(!contains_glob_pattern("/data/file.txt"));
-    }
-
-    #[test]
-    fn test_resolve_src_path() {
-        let workspace = PathBuf::from("/workspace");
-
-        assert_eq!(
-            resolve_src_path(&workspace, "/data/output.txt").unwrap(),
-            PathBuf::from("/workspace/data/output.txt")
-        );
     }
 }

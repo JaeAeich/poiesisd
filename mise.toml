@@ -1,10 +1,9 @@
 [env]
-S3_ACCESS_KEY_ID = "GKcafebabe00000000cafebabe"
-S3_BUCKET        = "data"
-# S3/Garage defaults (can be overridden in .env)
+S3_ACCESS_KEY_ID     = "adminadmin"
+S3_BUCKET            = "data"
 S3_ENDPOINT          = "http://localhost:9000"
 S3_REGION            = "us-east-1"
-S3_SECRET_ACCESS_KEY = "cafebabe00000000cafebabe00000000cafebabe00000000cafebabe00000000"
+S3_SECRET_ACCESS_KEY = "adminadmin"
 _.file               = ".env"
 _.source             = ".envrc"
 
@@ -17,15 +16,15 @@ description = "Run repo hygiene on all files"
 run         = "lefthook run pre-commit --all-files"
 
 [tasks.s3-down]
-description = "Stop Garage S3 container"
+description = "Stop S3 container"
 run         = "docker compose down"
 
 [tasks.s3-reset]
-description = "Reset Garage (delete all data)"
+description = "Reset S3 (delete all data)"
 run         = "docker compose down -v && docker compose up -d"
 
 [tasks.s3-up]
-description = "Start Garage S3 container"
+description = "Start S3 container"
 run         = "docker compose up -d"
 
 [tools]

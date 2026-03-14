@@ -5,20 +5,14 @@ pub enum FilerError {
     #[error("Invalid URL '{url}': {reason}")]
     InvalidUrl { url: String, reason: String },
 
-    #[error("Unsupported URL scheme: {0}")]
+    #[error("Unsupported URL scheme '{0}': only s3:// is supported")]
     UnsupportedScheme(String),
 
-    #[error("No backend registered for scheme: {0}")]
-    BackendNotFound(String),
-
-    #[error("Storage operation failed for '{url}': {source}")]
-    StorageFailed { url: String, source: opendal::Error },
+    #[error("Backend operation failed for '{key}': {message}")]
+    Backend { key: String, message: String },
 
     #[error("Path not found: {0}")]
     PathNotFound(PathBuf),
-
-    #[error("Workspace path does not exist: {0}")]
-    WorkspaceNotFound(PathBuf),
 
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
@@ -44,10 +38,10 @@ impl FilerError {
         }
     }
 
-    pub fn storage_failed(url: impl Into<String>, source: opendal::Error) -> Self {
-        Self::StorageFailed {
-            url: url.into(),
-            source,
+    pub fn backend(key: impl Into<String>, err: impl std::fmt::Display) -> Self {
+        Self::Backend {
+            key: key.into(),
+            message: err.to_string(),
         }
     }
 
