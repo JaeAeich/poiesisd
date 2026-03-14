@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO task_executors (task_id, executor_index, image, command, workdir, stdin, stdout, stderr, env, ignore_error)\n             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 10
+    },
+    "nullable": []
+  },
+  "hash": "47da0564bf364d5236ab53e8e27e96af46ef290d5fcb1903290e6a2aded2625b"
+}

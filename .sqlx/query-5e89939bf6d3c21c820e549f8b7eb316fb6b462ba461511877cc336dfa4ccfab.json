@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO task_volumes (task_id, volume_path) VALUES (?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "5e89939bf6d3c21c820e549f8b7eb316fb6b462ba461511877cc336dfa4ccfab"
+}

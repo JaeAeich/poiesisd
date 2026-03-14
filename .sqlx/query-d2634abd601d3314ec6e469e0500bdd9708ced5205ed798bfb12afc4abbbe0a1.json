@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO task_inputs (task_id, name, description, url, path, type, content, streamable)\n                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 8
+    },
+    "nullable": []
+  },
+  "hash": "d2634abd601d3314ec6e469e0500bdd9708ced5205ed798bfb12afc4abbbe0a1"
+}

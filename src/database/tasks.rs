@@ -27,21 +27,21 @@ pub async fn insert_task(pool: &SqlitePool, task: &TesTask) -> Result<String, Ap
             None => (None, None, None, None, None, None, 0),
         };
 
-    sqlx::query(
+    sqlx::query!(
         "INSERT INTO tasks (id, name, description, state, creation_time, cpu_cores, preemptible, ram_gb, disk_gb, zones, backend_parameters, backend_parameters_strict)
          VALUES (?, ?, ?, 'QUEUED', ?, ?, ?, ?, ?, ?, ?, ?)",
+        id,
+        task.name,
+        task.description,
+        creation_time,
+        cpu_cores,
+        preemptible,
+        ram_gb,
+        disk_gb,
+        zones,
+        backend_parameters,
+        bp_strict,
     )
-    .bind(&id)
-    .bind(&task.name)
-    .bind(&task.description)
-    .bind(&creation_time)
-    .bind(cpu_cores)
-    .bind(preemptible)
-    .bind(ram_gb)
-    .bind(disk_gb)
-    .bind(&zones)
-    .bind(&backend_parameters)
-    .bind(bp_strict)
     .execute(&mut *tx)
     .await?;
 
@@ -50,18 +50,18 @@ pub async fn insert_task(pool: &SqlitePool, task: &TesTask) -> Result<String, Ap
         for input in inputs {
             let file_type = input.r#type.as_ref().map(|t| t.to_string());
             let streamable = input.streamable.map(|b| b as i32);
-            sqlx::query(
+            sqlx::query!(
                 "INSERT INTO task_inputs (task_id, name, description, url, path, type, content, streamable)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                id,
+                input.name,
+                input.description,
+                input.url,
+                input.path,
+                file_type,
+                input.content,
+                streamable,
             )
-            .bind(&id)
-            .bind(&input.name)
-            .bind(&input.description)
-            .bind(&input.url)
-            .bind(&input.path)
-            .bind(&file_type)
-            .bind(&input.content)
-            .bind(streamable)
             .execute(&mut *tx)
             .await?;
         }
@@ -71,17 +71,17 @@ pub async fn insert_task(pool: &SqlitePool, task: &TesTask) -> Result<String, Ap
     if let Some(outputs) = &task.outputs {
         for output in outputs {
             let file_type = output.r#type.as_ref().map(|t| t.to_string());
-            sqlx::query(
+            sqlx::query!(
                 "INSERT INTO task_outputs (task_id, name, description, url, path, path_prefix, type)
                  VALUES (?, ?, ?, ?, ?, ?, ?)",
+                id,
+                output.name,
+                output.description,
+                output.url,
+                output.path,
+                output.path_prefix,
+                file_type,
             )
-            .bind(&id)
-            .bind(&output.name)
-            .bind(&output.description)
-            .bind(&output.url)
-            .bind(&output.path)
-            .bind(&output.path_prefix)
-            .bind(&file_type)
             .execute(&mut *tx)
             .await?;
         }
@@ -95,20 +95,21 @@ pub async fn insert_task(pool: &SqlitePool, task: &TesTask) -> Result<String, Ap
             .as_ref()
             .map(|e| serde_json::to_string(e).unwrap());
         let ignore_error = executor.ignore_error.map(|b| b as i32);
-        sqlx::query(
+        let idx = i as i32;
+        sqlx::query!(
             "INSERT INTO task_executors (task_id, executor_index, image, command, workdir, stdin, stdout, stderr, env, ignore_error)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            id,
+            idx,
+            executor.image,
+            command,
+            executor.workdir,
+            executor.stdin,
+            executor.stdout,
+            executor.stderr,
+            env,
+            ignore_error,
         )
-        .bind(&id)
-        .bind(i as i32)
-        .bind(&executor.image)
-        .bind(&command)
-        .bind(&executor.workdir)
-        .bind(&executor.stdin)
-        .bind(&executor.stdout)
-        .bind(&executor.stderr)
-        .bind(&env)
-        .bind(ignore_error)
         .execute(&mut *tx)
         .await?;
     }
@@ -116,23 +117,27 @@ pub async fn insert_task(pool: &SqlitePool, task: &TesTask) -> Result<String, Ap
     // Volumes
     if let Some(volumes) = &task.volumes {
         for vol in volumes {
-            sqlx::query("INSERT INTO task_volumes (task_id, volume_path) VALUES (?, ?)")
-                .bind(&id)
-                .bind(vol)
-                .execute(&mut *tx)
-                .await?;
+            sqlx::query!(
+                "INSERT INTO task_volumes (task_id, volume_path) VALUES (?, ?)",
+                id,
+                vol,
+            )
+            .execute(&mut *tx)
+            .await?;
         }
     }
 
     // Tags
     if let Some(tags) = &task.tags {
         for (key, value) in tags {
-            sqlx::query("INSERT INTO task_tags (task_id, tag_key, tag_value) VALUES (?, ?, ?)")
-                .bind(&id)
-                .bind(key)
-                .bind(value)
-                .execute(&mut *tx)
-                .await?;
+            sqlx::query!(
+                "INSERT INTO task_tags (task_id, tag_key, tag_value) VALUES (?, ?, ?)",
+                id,
+                key,
+                value,
+            )
+            .execute(&mut *tx)
+            .await?;
         }
     }
 
