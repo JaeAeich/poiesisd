@@ -1,0 +1,39 @@
+services:
+  s3:
+    image: rustfs/rustfs:latest
+    container_name: s3
+    ports:
+      - "9000:9000" # S3 API
+      - "9001:9001" # Web console
+    volumes:
+      - s3-data:/data
+    environment:
+      RUSTFS_ACCESS_KEY: "${S3_ACCESS_KEY_ID:-adminadmin}"
+      RUSTFS_SECRET_KEY: "${S3_SECRET_ACCESS_KEY:-adminadmin}"
+    healthcheck:
+      test: ["CMD", "curl", "-so", "/dev/null", "http://localhost:9000/"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  s3-init:
+    image: minio/mc:latest
+    container_name: s3-init
+    depends_on:
+      s3:
+        condition: service_healthy
+    environment:
+      S3_ACCESS_KEY_ID: "${S3_ACCESS_KEY_ID:-admin}"
+      S3_SECRET_ACCESS_KEY: "${S3_SECRET_ACCESS_KEY:-adminadmin}"
+      S3_BUCKET: "${S3_BUCKET:-data}"
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        mc alias set s3 http://s3:9000 "$$S3_ACCESS_KEY_ID" "$$S3_SECRET_ACCESS_KEY"
+        mc mb --ignore-existing s3/"$$S3_BUCKET"
+        echo "Bucket '$$S3_BUCKET' ready."
+    restart: "no"
+
+volumes:
+  s3-data:
