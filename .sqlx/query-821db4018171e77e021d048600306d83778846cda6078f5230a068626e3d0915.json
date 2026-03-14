@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO tasks (id, name, description, state, creation_time, cpu_cores, preemptible, ram_gb, disk_gb, zones, backend_parameters, backend_parameters_strict)\n         VALUES (?, ?, ?, 'QUEUED', ?, ?, ?, ?, ?, ?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 11
+    },
+    "nullable": []
+  },
+  "hash": "821db4018171e77e021d048600306d83778846cda6078f5230a068626e3d0915"
+}

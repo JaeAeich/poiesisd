@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO task_tags (task_id, tag_key, tag_value) VALUES (?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "ebb3968fa347f3a0790f4a894a907f8943f2904fc95857205a8cc78a575ec6f8"
+}

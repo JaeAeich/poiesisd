@@ -1,21 +1,22 @@
 [dependencies]
-aws-config = "1"
-aws-sdk-s3 = "1"
-bytes      = "1"
-chrono     = { features = [ "serde" ], version = "0.4.43" }
-glob       = "0.3"
-serde      = { features = [ "derive" ], version = "1.0.228" }
-serde_json = "1.0.149"
-serde_yaml = "0.9"
-thiserror  = "2"
-tokio      = { features = [ "full" ], version = "1" }
-tracing    = "0.1"
-url        = "2"
-utoipa     = { features = [ "macros" ], version = "5.4.0" }
-
-[[example]]
-name = "filer_s3_test"
-path = "examples/filer_s3_test.rs"
+aws-config         = "1"
+aws-sdk-s3         = "1"
+axum               = "0.8"
+bytes              = "1"
+chrono             = { features = [ "serde" ], version = "0.4.44" }
+glob               = "0.3"
+serde              = { features = [ "derive" ], version = "1.0.228" }
+serde_json         = "1.0.149"
+serde_yaml         = "0.9"
+sqlx               = { features = [ "runtime-tokio", "sqlite" ], version = "0.8" }
+thiserror          = "2"
+tokio              = { features = [ "full" ], version = "1" }
+tower-http         = { features = [ "trace" ], version = "0.6" }
+tracing            = "0.1"
+tracing-subscriber = "0.3"
+url                = "2"
+utoipa             = { features = [ "macros" ], version = "5.4.0" }
+uuid               = { features = [ "serde", "v4" ], version = "1" }
 
 [package]
 edition = "2024"
