@@ -1,7 +1,8 @@
 mod tasks;
 
 pub use tasks::{
-    FullTask, claim_queued_task, get_task_full, insert_task, insert_task_log, update_task_state,
+    FullTask, TesView, claim_queued_task, get_task_by_id, get_task_full, insert_task,
+    insert_task_log, update_task_state,
 };
 
 use sqlx::SqlitePool;
@@ -109,6 +110,12 @@ CREATE TABLE IF NOT EXISTS output_file_logs (
     path TEXT NOT NULL,
     size_bytes INTEGER NOT NULL
 );
+
+CREATE INDEX IF NOT EXISTS idx_tasks_state_creation ON tasks(state, creation_time);
+CREATE INDEX IF NOT EXISTS idx_task_inputs_task_id ON task_inputs(task_id);
+CREATE INDEX IF NOT EXISTS idx_task_outputs_task_id ON task_outputs(task_id);
+CREATE INDEX IF NOT EXISTS idx_task_executors_task_id ON task_executors(task_id);
+CREATE INDEX IF NOT EXISTS idx_task_logs_task_id ON task_logs(task_id);
 "#;
 
 pub async fn init_db() -> SqlitePool {

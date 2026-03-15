@@ -1,0 +1,44 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT start_time, end_time, stdout, stderr, exit_code\n             FROM executor_logs WHERE task_log_id = ? ORDER BY executor_index",
+  "describe": {
+    "columns": [
+      {
+        "name": "start_time",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "end_time",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "stdout",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "stderr",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "exit_code",
+        "ordinal": 4,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "1ec2fead98620b8857862d38571de100532b2a1f6b46072ecdfb5cdbe437fc23"
+}

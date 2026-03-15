@@ -9,6 +9,6 @@ mod url;
 pub mod util;
 
 pub use backend::S3Backend;
-pub use config::{AppConfig, BackendConfig, FilerConfig, S3Config, ServiceConfig};
+pub use config::{BackendConfig, S3Config};
 pub use error::{FilerError, Result};
 pub use filer::Filer;

@@ -93,6 +93,19 @@ async fn run_task(
     }
 }
 
+/// Record partial logs and update task state on failure.
+async fn fail_task(
+    pool: &SqlitePool,
+    task_id: &str,
+    start_time: &str,
+    executor_logs: &[TesExecutorLog],
+    system_logs: &[String],
+    state: &str,
+) -> Result<(), sqlx::Error> {
+    insert_task_log(pool, task_id, start_time, executor_logs, &[], system_logs).await;
+    database::update_task_state(pool, task_id, state).await
+}
+
 /// Inner execution flow, separated so we can always do cleanup in the outer fn.
 async fn run_task_inner(
     pool: &SqlitePool,
@@ -145,17 +158,15 @@ async fn run_task_inner(
             had_error = true;
 
             if !executor.ignore_error.unwrap_or(false) {
-                // Record partial logs, then set EXECUTOR_ERROR
-                insert_task_log(
+                fail_task(
                     pool,
                     task_id,
                     &task_start_time,
                     &executor_logs,
-                    &[],
                     &system_logs,
+                    "SYSTEM_ERROR",
                 )
-                .await;
-                database::update_task_state(pool, task_id, "SYSTEM_ERROR").await?;
+                .await?;
                 return Err(e);
             }
             continue;
@@ -200,16 +211,15 @@ async fn run_task_inner(
                     system_logs.push(msg);
 
                     if !executor.ignore_error.unwrap_or(false) {
-                        insert_task_log(
+                        fail_task(
                             pool,
                             task_id,
                             &task_start_time,
                             &executor_logs,
-                            &[],
                             &system_logs,
+                            "EXECUTOR_ERROR",
                         )
-                        .await;
-                        database::update_task_state(pool, task_id, "EXECUTOR_ERROR").await?;
+                        .await?;
                         return Err(RunnerError::ExecutionFailed(ExecutionFailed));
                     }
                     had_error = true;
@@ -222,16 +232,15 @@ async fn run_task_inner(
                 executor_logs.push(TesExecutorLog::new(-1));
 
                 if !executor.ignore_error.unwrap_or(false) {
-                    insert_task_log(
+                    fail_task(
                         pool,
                         task_id,
                         &task_start_time,
                         &executor_logs,
-                        &[],
                         &system_logs,
+                        "SYSTEM_ERROR",
                     )
-                    .await;
-                    database::update_task_state(pool, task_id, "SYSTEM_ERROR").await?;
+                    .await?;
                     return Err(e);
                 }
                 had_error = true;

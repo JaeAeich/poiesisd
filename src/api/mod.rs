@@ -7,7 +7,7 @@ use axum::Router;
 use axum::routing::{get, post};
 use sqlx::SqlitePool;
 
-use crate::filer::ServiceConfig;
+use crate::config::ServiceConfig;
 
 pub fn router(pool: SqlitePool, service_config: ServiceConfig) -> Router {
     Router::new()

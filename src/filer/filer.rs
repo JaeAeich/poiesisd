@@ -2,7 +2,7 @@ use crate::dto::TesInput;
 use crate::dto::TesOutput;
 use crate::dto::TesOutputFileLog;
 use crate::filer::backend::{S3Backend, StorageBackend};
-use crate::filer::config::{BackendConfig, FilerConfig};
+use crate::filer::config::BackendConfig;
 use crate::filer::error::{FilerError, Result};
 use crate::filer::input::stage_input;
 use crate::filer::output::collect_output;
@@ -21,8 +21,8 @@ pub struct Filer<B: StorageBackend> {
 }
 
 impl Filer<S3Backend> {
-    pub fn from_config(config: &FilerConfig) -> Result<Self> {
-        match &config.backend {
+    pub fn from_config(config: &BackendConfig) -> Result<Self> {
+        match config {
             BackendConfig::S3(s3_config) => {
                 let backend = S3Backend::from_config(s3_config)?;
                 Ok(Self {

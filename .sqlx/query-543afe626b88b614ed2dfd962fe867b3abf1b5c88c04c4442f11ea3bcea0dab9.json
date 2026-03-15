@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT tag_key, tag_value FROM task_tags WHERE task_id = ? ORDER BY id",
+  "describe": {
+    "columns": [
+      {
+        "name": "tag_key",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "tag_value",
+        "ordinal": 1,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      true
+    ]
+  },
+  "hash": "543afe626b88b614ed2dfd962fe867b3abf1b5c88c04c4442f11ea3bcea0dab9"
+}

@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
-use poiesisd::filer::{AppConfig, Filer, FilerConfig};
+use poiesisd::config::AppConfig;
+use poiesisd::filer::Filer;
 use poiesisd::runner::{DockerExecutor, Worker};
 use poiesisd::{api, database};
 use tokio::net::TcpListener;
@@ -22,11 +23,8 @@ async fn main() {
 
     // Init filer + docker + worker
     let config = load_config();
-    let filer_config = FilerConfig {
-        backend: config.backend,
-    };
     let filer =
-        Arc::new(Filer::from_config(&filer_config).expect("failed to create filer from config"));
+        Arc::new(Filer::from_config(&config.backend).expect("failed to create filer from config"));
     let docker = DockerExecutor::new().expect("failed to connect to Docker");
     let _worker = Worker::spawn(pool.clone(), filer, docker);
     tracing::info!("worker started");
