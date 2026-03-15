@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT volume_path FROM task_volumes WHERE task_id = ? ORDER BY id",
+  "describe": {
+    "columns": [
+      {
+        "name": "volume_path",
+        "ordinal": 0,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "03898e9b52cd7bf84b3355d47f85f7fb499727e93bd2a927b915f0dddbdc7a0d"
+}

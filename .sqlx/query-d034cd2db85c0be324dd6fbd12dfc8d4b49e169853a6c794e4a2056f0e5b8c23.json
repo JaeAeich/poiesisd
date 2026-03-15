@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE tasks SET state = 'INITIALIZING'\n         WHERE id = (SELECT id FROM tasks WHERE state = 'QUEUED' ORDER BY creation_time LIMIT 1)\n         RETURNING id",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "d034cd2db85c0be324dd6fbd12dfc8d4b49e169853a6c794e4a2056f0e5b8c23"
+}

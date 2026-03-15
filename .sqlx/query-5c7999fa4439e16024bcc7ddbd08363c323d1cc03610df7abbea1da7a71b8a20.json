@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT COALESCE(MAX(log_index), -1) + 1 FROM task_logs WHERE task_id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "COALESCE(MAX(log_index), -1) + 1",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "5c7999fa4439e16024bcc7ddbd08363c323d1cc03610df7abbea1da7a71b8a20"
+}

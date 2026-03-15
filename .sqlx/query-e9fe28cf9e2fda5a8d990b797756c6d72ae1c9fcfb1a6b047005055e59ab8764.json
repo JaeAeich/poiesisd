@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO output_file_logs (task_log_id, url, path, size_bytes) VALUES (?, ?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "e9fe28cf9e2fda5a8d990b797756c6d72ae1c9fcfb1a6b047005055e59ab8764"
+}

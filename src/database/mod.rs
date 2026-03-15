@@ -1,6 +1,8 @@
 mod tasks;
 
-pub use tasks::insert_task;
+pub use tasks::{
+    FullTask, claim_queued_task, get_task_full, insert_task, insert_task_log, update_task_state,
+};
 
 use sqlx::SqlitePool;
 use sqlx::sqlite::SqlitePoolOptions;

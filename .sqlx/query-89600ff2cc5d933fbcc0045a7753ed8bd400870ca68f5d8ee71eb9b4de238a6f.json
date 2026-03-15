@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO executor_logs (task_log_id, executor_index, start_time, end_time, stdout, stderr, exit_code)\n             VALUES (?, ?, ?, ?, ?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 7
+    },
+    "nullable": []
+  },
+  "hash": "89600ff2cc5d933fbcc0045a7753ed8bd400870ca68f5d8ee71eb9b4de238a6f"
+}

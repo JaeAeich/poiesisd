@@ -1,0 +1,10 @@
+target/
+poiesisd.db
+poiesisd.db-wal
+poiesisd.db-shm
+.git/
+.opencode/
+.env
+.envrc
+examples/
+scripts/

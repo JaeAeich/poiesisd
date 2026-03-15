@@ -1,0 +1,62 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT image, command, workdir, stdin, stdout, stderr, env, ignore_error\n         FROM task_executors WHERE task_id = ? ORDER BY executor_index",
+  "describe": {
+    "columns": [
+      {
+        "name": "image",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "command",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "workdir",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "stdin",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "stdout",
+        "ordinal": 4,
+        "type_info": "Text"
+      },
+      {
+        "name": "stderr",
+        "ordinal": 5,
+        "type_info": "Text"
+      },
+      {
+        "name": "env",
+        "ordinal": 6,
+        "type_info": "Text"
+      },
+      {
+        "name": "ignore_error",
+        "ordinal": 7,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "2bbdb596a0b93e31bb08a1e8fe554580788c7fa5a278b6ece8d803ec06414e83"
+}

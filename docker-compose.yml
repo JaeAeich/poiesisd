@@ -8,10 +8,15 @@ services:
     volumes:
       - s3-data:/data
     environment:
-      RUSTFS_ACCESS_KEY: "${S3_ACCESS_KEY_ID:-adminadmin}"
-      RUSTFS_SECRET_KEY: "${S3_SECRET_ACCESS_KEY:-adminadmin}"
+      RUSTFS_ACCESS_KEY: ${S3_ACCESS_KEY_ID:-admin}
+      RUSTFS_SECRET_KEY: ${S3_SECRET_ACCESS_KEY:-adminadmin}
     healthcheck:
-      test: ["CMD", "curl", "-so", "/dev/null", "http://localhost:9000/"]
+      test:
+        - "CMD"
+        - "curl"
+        - "-so"
+        - "/dev/null"
+        - "http://localhost:9000/"
       interval: 5s
       timeout: 3s
       retries: 10
@@ -23,9 +28,9 @@ services:
       s3:
         condition: service_healthy
     environment:
-      S3_ACCESS_KEY_ID: "${S3_ACCESS_KEY_ID:-admin}"
-      S3_SECRET_ACCESS_KEY: "${S3_SECRET_ACCESS_KEY:-adminadmin}"
-      S3_BUCKET: "${S3_BUCKET:-data}"
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-admin}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-adminadmin}
+      S3_BUCKET: ${S3_BUCKET}
     entrypoint: /bin/sh
     command:
       - -c
@@ -35,5 +40,52 @@ services:
         echo "Bucket '$$S3_BUCKET' ready."
     restart: "no"
 
+  poiesisd:
+    build:
+      context: .
+      dockerfile: deployment/images/poiesisd/Dockerfile
+    container_name: poiesisd
+    ports:
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - poiesisd-data:/app
+      - /tmp/poiesisd:/tmp/poiesisd
+    environment:
+      POIESISD_CONFIG: /app/config.yaml
+      POIESISD_WORKSPACE_ROOT: /tmp/poiesisd
+      RUST_LOG: info
+    configs:
+      - source: poiesisd-config
+        target: /app/config.yaml
+    depends_on:
+      s3-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - "CMD"
+        - "curl"
+        - "-sf"
+        - "http://localhost:8080/ga4gh/tes/v1/service-info"
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+configs:
+  poiesisd-config:
+    content: |
+      backend:
+        type: s3
+        endpoint: http://s3:9000
+        access_key_id: ${S3_ACCESS_KEY_ID:-admin}
+        secret_access_key: ${S3_SECRET_ACCESS_KEY:-adminadmin}
+        bucket: ${S3_BUCKET:-data}
+      service:
+        id: ${POIESISD_SERVICE_ID:-poiesisd}
+        name: ${POIESISD_SERVICE_NAME:-tes}
+        org_name: ${POIESISD_ORG_NAME:-jaeaeich}
+        org_url: ${POIESISD_ORG_URL:-https://github.com/jaeaeich}
+
 volumes:
   s3-data:
+  poiesisd-data:
