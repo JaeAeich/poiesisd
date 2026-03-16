@@ -6,9 +6,11 @@ use serde_json::json;
 #[derive(Debug, thiserror::Error)]
 pub enum ApiError {
     #[error("database error: {0}")]
-    Database(#[from] sqlx::Error),
+    Database(#[from] crate::database::DatabaseError),
     #[error("validation error: {0}")]
     Validation(String),
+    #[error("not found: {0}")]
+    NotFound(String),
 }
 
 impl IntoResponse for ApiError {
@@ -16,6 +18,7 @@ impl IntoResponse for ApiError {
         let (status, message) = match &self {
             ApiError::Database(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
             ApiError::Validation(msg) => (StatusCode::BAD_REQUEST, msg.clone()),
+            ApiError::NotFound(msg) => (StatusCode::NOT_FOUND, msg.clone()),
         };
         (status, Json(json!({ "error": message }))).into_response()
     }

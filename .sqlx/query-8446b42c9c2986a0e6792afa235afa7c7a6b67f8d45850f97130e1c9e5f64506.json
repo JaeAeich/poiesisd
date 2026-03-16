@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO task_logs (task_id, log_index, metadata, start_time, end_time, system_logs)\n         VALUES (?, ?, ?, ?, ?, ?) RETURNING id",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 6
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "8446b42c9c2986a0e6792afa235afa7c7a6b67f8d45850f97130e1c9e5f64506"
+}

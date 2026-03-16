@@ -2,8 +2,10 @@
 aws-config         = "1"
 aws-sdk-s3         = "1"
 axum               = "0.8"
+bollard            = "0.18"
 bytes              = "1"
 chrono             = { features = [ "serde" ], version = "0.4.44" }
+futures-util       = "0.3"
 glob               = "0.3"
 serde              = { features = [ "derive" ], version = "1.0.228" }
 serde_json         = "1.0.149"
