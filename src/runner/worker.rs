@@ -13,7 +13,7 @@ use crate::filer::{Filer, S3Backend};
 use super::docker::{ContainerRunConfig, DockerExecutor};
 use super::error::{ExecutionFailed, RunnerError};
 
-/// Workspace root. When running inside Docker (DinD via socket mount), bind mounts
+/// Workspace root. When running inside Docker (DooD via socket mount), bind mounts
 /// are resolved by the Docker daemon against the **host** filesystem. Set
 /// `POIESISD_WORKSPACE_ROOT` to a host path that is also mounted into the poiesisd
 /// container at the same path so both sides see the same files.
@@ -101,7 +101,7 @@ async fn fail_task(
     executor_logs: &[TesExecutorLog],
     system_logs: &[String],
     state: &str,
-) -> Result<(), sqlx::Error> {
+) -> Result<(), crate::database::DatabaseError> {
     insert_task_log(pool, task_id, start_time, executor_logs, &[], system_logs).await;
     database::update_task_state(pool, task_id, state).await
 }

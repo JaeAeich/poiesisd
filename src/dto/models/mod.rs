@@ -15,6 +15,7 @@ mod tes_service_type;
 mod tes_state;
 mod tes_task;
 mod tes_task_log;
+mod tes_view;
 
 pub use service::*;
 pub use service_organization::*;
@@ -33,3 +34,4 @@ pub use tes_service_type::*;
 pub use tes_state::*;
 pub use tes_task::*;
 pub use tes_task_log::*;
+pub use tes_view::*;

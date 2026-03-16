@@ -9,7 +9,7 @@ pub struct ExecutionFailed;
 pub enum RunnerError {
     Docker(bollard::errors::Error),
     Filer(crate::filer::FilerError),
-    Database(sqlx::Error),
+    Database(crate::database::DatabaseError),
     Io(std::io::Error),
     /// Terminal state already set in DB — not a crash, just a signal.
     ExecutionFailed(ExecutionFailed),
@@ -41,8 +41,8 @@ impl From<crate::filer::FilerError> for RunnerError {
     }
 }
 
-impl From<sqlx::Error> for RunnerError {
-    fn from(e: sqlx::Error) -> Self {
+impl From<crate::database::DatabaseError> for RunnerError {
+    fn from(e: crate::database::DatabaseError) -> Self {
         Self::Database(e)
     }
 }

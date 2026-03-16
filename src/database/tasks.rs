@@ -3,11 +3,20 @@ use std::collections::HashMap;
 use sqlx::SqlitePool;
 use uuid::Uuid;
 
-use crate::api::error::ApiError;
+use super::error::DatabaseError;
 use crate::dto::{
     TesExecutor, TesExecutorLog, TesInput, TesOutput, TesOutputFileLog, TesState, TesTask,
-    TesTaskLog,
+    TesTaskLog, TesView,
 };
+
+/// Convert an empty collection to `None`, non-empty to `Some`.
+fn none_if_empty<T>(v: Vec<T>) -> Option<Vec<T>> {
+    if v.is_empty() { None } else { Some(v) }
+}
+
+fn none_if_empty_map<K, V>(m: HashMap<K, V>) -> Option<HashMap<K, V>> {
+    if m.is_empty() { None } else { Some(m) }
+}
 
 /// Full task data needed by the worker, reconstructed from all related tables.
 pub struct FullTask {
@@ -17,15 +26,7 @@ pub struct FullTask {
     pub volumes: Vec<String>,
 }
 
-/// Controls how much data to return for a task.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum TesView {
-    Minimal,
-    Basic,
-    Full,
-}
-
-pub async fn insert_task(pool: &SqlitePool, task: &TesTask) -> Result<String, ApiError> {
+pub async fn insert_task(pool: &SqlitePool, task: &TesTask) -> Result<String, DatabaseError> {
     let id = Uuid::new_v4().to_string();
     let creation_time = chrono::Utc::now().to_rfc3339();
 
@@ -169,7 +170,7 @@ pub async fn insert_task(pool: &SqlitePool, task: &TesTask) -> Result<String, Ap
 
 /// Atomically claim the oldest QUEUED task by setting its state to INITIALIZING.
 /// Returns the task id if one was claimed, None if no queued tasks exist.
-pub async fn claim_queued_task(pool: &SqlitePool) -> Result<Option<String>, sqlx::Error> {
+pub async fn claim_queued_task(pool: &SqlitePool) -> Result<Option<String>, DatabaseError> {
     let row = sqlx::query_scalar!(
         "UPDATE tasks SET state = 'INITIALIZING'
          WHERE id = (SELECT id FROM tasks WHERE state = 'QUEUED' ORDER BY creation_time LIMIT 1)
@@ -186,7 +187,7 @@ pub async fn get_task_by_id(
     pool: &SqlitePool,
     task_id: &str,
     view: TesView,
-) -> Result<Option<TesTask>, sqlx::Error> {
+) -> Result<Option<TesTask>, DatabaseError> {
     let row = sqlx::query!(
         "SELECT id, state, name, description, creation_time FROM tasks WHERE id = ?",
         task_id,
@@ -222,23 +223,11 @@ pub async fn get_task_by_id(
         name: row.name,
         description: row.description,
         creation_time: Some(row.creation_time),
-        inputs: if inputs.is_empty() {
-            None
-        } else {
-            Some(inputs)
-        },
-        outputs: if outputs.is_empty() {
-            None
-        } else {
-            Some(outputs)
-        },
+        inputs: none_if_empty(inputs),
+        outputs: none_if_empty(outputs),
         executors,
-        volumes: if volumes.is_empty() {
-            None
-        } else {
-            Some(volumes)
-        },
-        tags: if tags.is_empty() { None } else { Some(tags) },
+        volumes: none_if_empty(volumes),
+        tags: none_if_empty_map(tags),
         ..Default::default()
     };
 
@@ -251,7 +240,7 @@ pub async fn get_task_by_id(
 }
 
 /// Fetch complete task data from all related tables (used by the worker).
-pub async fn get_task_full(pool: &SqlitePool, task_id: &str) -> Result<FullTask, sqlx::Error> {
+pub async fn get_task_full(pool: &SqlitePool, task_id: &str) -> Result<FullTask, DatabaseError> {
     let inputs = fetch_inputs(pool, task_id).await?;
     let outputs = fetch_outputs(pool, task_id).await?;
 
@@ -314,7 +303,7 @@ pub async fn update_task_state(
     pool: &SqlitePool,
     task_id: &str,
     state: &str,
-) -> Result<(), sqlx::Error> {
+) -> Result<(), DatabaseError> {
     sqlx::query!("UPDATE tasks SET state = ? WHERE id = ?", state, task_id,)
         .execute(pool)
         .await?;
@@ -326,7 +315,7 @@ pub async fn insert_task_log(
     pool: &SqlitePool,
     task_id: &str,
     task_log: &TesTaskLog,
-) -> Result<(), sqlx::Error> {
+) -> Result<(), DatabaseError> {
     let mut tx = pool.begin().await?;
 
     let metadata = task_log

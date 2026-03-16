@@ -6,7 +6,7 @@ use serde_json::json;
 #[derive(Debug, thiserror::Error)]
 pub enum ApiError {
     #[error("database error: {0}")]
-    Database(#[from] sqlx::Error),
+    Database(#[from] crate::database::DatabaseError),
     #[error("validation error: {0}")]
     Validation(String),
     #[error("not found: {0}")]

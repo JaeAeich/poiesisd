@@ -8,9 +8,10 @@ use sqlx::SqlitePool;
 
 use crate::api::error::ApiError;
 use crate::config::ServiceConfig;
-use crate::database::{self, TesView, insert_task};
+use crate::database::{self, insert_task};
 use crate::dto::{
     Artifact, ServiceOrganization, TesCreateTaskResponse, TesServiceInfo, TesServiceType, TesTask,
+    TesView,
 };
 
 pub async fn service_info(
@@ -41,12 +42,8 @@ pub async fn create_task(
 
 #[derive(Deserialize)]
 pub struct ViewQuery {
-    #[serde(default = "default_view")]
-    pub view: String,
-}
-
-fn default_view() -> String {
-    "MINIMAL".to_string()
+    #[serde(default)]
+    pub view: TesView,
 }
 
 pub async fn get_task(
@@ -54,14 +51,7 @@ pub async fn get_task(
     Path(id): Path<String>,
     Query(query): Query<ViewQuery>,
 ) -> Result<Json<TesTask>, ApiError> {
-    let view = match query.view.to_uppercase().as_str() {
-        "MINIMAL" => TesView::Minimal,
-        "BASIC" => TesView::Basic,
-        "FULL" => TesView::Full,
-        _ => TesView::Minimal,
-    };
-
-    let task = database::get_task_by_id(&pool, &id, view)
+    let task = database::get_task_by_id(&pool, &id, query.view)
         .await?
         .ok_or_else(|| ApiError::NotFound(format!("task '{id}' not found")))?;
 
