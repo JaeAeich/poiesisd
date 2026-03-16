@@ -43,7 +43,7 @@ services:
   poiesisd:
     build:
       context: .
-      dockerfile: deployment/images/poiesisd/Dockerfile
+      dockerfile: deployment/images/Dockerfile
     container_name: poiesisd
     ports:
       - "8080:8080"
