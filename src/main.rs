@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use poiesisd::config::AppConfig;
+use poiesisd::events::TaskEvent;
 use poiesisd::filer::Filer;
 use poiesisd::runner::{DockerExecutor, Worker};
 use poiesisd::{api, database};
@@ -26,10 +27,11 @@ async fn main() {
     let filer =
         Arc::new(Filer::from_config(&config.backend).expect("failed to create filer from config"));
     let docker = DockerExecutor::new().expect("failed to connect to Docker");
-    let _worker = Worker::spawn(pool.clone(), filer, docker);
+    let (event_tx, _) = tokio::sync::broadcast::channel::<TaskEvent>(256);
+    let _worker = Worker::spawn(pool.clone(), filer, docker, event_tx.clone());
     tracing::info!("worker started");
 
-    let app = api::router(pool, config.service).layer(TraceLayer::new_for_http());
+    let app = api::router(pool, config.service, event_tx).layer(TraceLayer::new_for_http());
 
     let listener = TcpListener::bind("0.0.0.0:8080").await.unwrap();
     tracing::info!("listening on {}", listener.local_addr().unwrap());

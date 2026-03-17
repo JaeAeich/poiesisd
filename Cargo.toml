@@ -1,4 +1,6 @@
 [dependencies]
+askama             = "0.15"
+async-stream       = "0.3"
 aws-config         = "1"
 aws-sdk-s3         = "1"
 axum               = "0.8"
@@ -13,6 +15,7 @@ serde_yaml         = "0.9"
 sqlx               = { features = [ "runtime-tokio", "sqlite" ], version = "0.8" }
 thiserror          = "2"
 tokio              = { features = [ "full" ], version = "1" }
+tokio-stream       = { version = "0.1", features = ["sync"] }
 tower-http         = { features = [ "trace" ], version = "0.6" }
 tracing            = "0.1"
 tracing-subscriber = "0.3"

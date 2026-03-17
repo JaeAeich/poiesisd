@@ -3,8 +3,8 @@ mod tasks;
 
 pub use error::DatabaseError;
 pub use tasks::{
-    FullTask, claim_queued_task, get_task_by_id, get_task_full, insert_task, insert_task_log,
-    update_task_state,
+    FullTask, TaskListItem, claim_queued_task, get_task_by_id, get_task_full, insert_task,
+    insert_task_log, list_tasks, update_task_state,
 };
 
 use sqlx::SqlitePool;

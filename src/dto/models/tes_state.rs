@@ -46,6 +46,15 @@ pub enum TesState {
     Canceling,
 }
 
+impl TesState {
+    pub fn is_terminal(&self) -> bool {
+        matches!(
+            self,
+            Self::Complete | Self::ExecutorError | Self::SystemError | Self::Canceled
+        )
+    }
+}
+
 impl std::str::FromStr for TesState {
     type Err = std::convert::Infallible;
 

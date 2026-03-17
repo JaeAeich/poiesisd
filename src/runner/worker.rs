@@ -6,7 +6,8 @@ use sqlx::SqlitePool;
 use tokio::task::JoinHandle;
 
 use crate::database;
-use crate::dto::{TesExecutor, TesExecutorLog, TesInput, TesOutput, TesOutputFileLog, TesTaskLog};
+use crate::dto::{TesExecutor, TesExecutorLog, TesInput, TesOutput, TesOutputFileLog, TesState, TesTaskLog};
+use crate::events::TaskEvent;
 use crate::filer::util::resolve_workspace_path;
 use crate::filer::{Filer, S3Backend};
 
@@ -30,6 +31,7 @@ impl Worker {
         pool: SqlitePool,
         filer: Arc<Filer<S3Backend>>,
         docker: DockerExecutor,
+        event_tx: tokio::sync::broadcast::Sender<TaskEvent>,
     ) -> JoinHandle<()> {
         tokio::spawn(async move {
             let docker = Arc::new(docker);
@@ -37,7 +39,11 @@ impl Worker {
                 match database::claim_queued_task(&pool).await {
                     Ok(Some(task_id)) => {
                         tracing::info!(task_id = %task_id, "claimed task");
-                        if let Err(e) = run_task(&pool, &filer, &docker, &task_id).await {
+                        let _ = event_tx.send(TaskEvent {
+                            task_id: task_id.clone(),
+                            state: TesState::Initializing,
+                        });
+                        if let Err(e) = run_task(&pool, &filer, &docker, &task_id, &event_tx).await {
                             tracing::error!(task_id = %task_id, error = %e, "task failed");
                         }
                     }
@@ -59,15 +65,20 @@ async fn run_task(
     filer: &Filer<S3Backend>,
     docker: &DockerExecutor,
     task_id: &str,
+    event_tx: &tokio::sync::broadcast::Sender<TaskEvent>,
 ) -> Result<(), RunnerError> {
     let task = database::get_task_full(pool, task_id).await?;
     let workspace = workspace_root().join(task_id);
 
-    let result = run_task_inner(pool, filer, docker, task_id, &task, &workspace).await;
+    let result = run_task_inner(pool, filer, docker, task_id, &task, &workspace, event_tx).await;
 
     match &result {
         Ok(()) => {
             database::update_task_state(pool, task_id, "COMPLETE").await?;
+            let _ = event_tx.send(TaskEvent {
+                task_id: task_id.to_string(),
+                state: TesState::Complete,
+            });
             tracing::info!(task_id = %task_id, "task complete");
         }
         Err(RunnerError::ExecutionFailed(_)) => {
@@ -75,9 +86,14 @@ async fn run_task(
             tracing::warn!(task_id = %task_id, "task finished with error (state already set)");
         }
         Err(e) => {
-            let state = e.tes_state();
-            let _ = database::update_task_state(pool, task_id, state).await;
-            tracing::error!(task_id = %task_id, state = state, error = %e, "task errored");
+            let state_str = e.tes_state();
+            let _ = database::update_task_state(pool, task_id, state_str).await;
+            let state: TesState = state_str.parse().unwrap_or_default();
+            let _ = event_tx.send(TaskEvent {
+                task_id: task_id.to_string(),
+                state,
+            });
+            tracing::error!(task_id = %task_id, state = state_str, error = %e, "task errored");
         }
     }
 
@@ -101,9 +117,16 @@ async fn fail_task(
     executor_logs: &[TesExecutorLog],
     system_logs: &[String],
     state: &str,
+    event_tx: &tokio::sync::broadcast::Sender<TaskEvent>,
 ) -> Result<(), crate::database::DatabaseError> {
     insert_task_log(pool, task_id, start_time, executor_logs, &[], system_logs).await;
-    database::update_task_state(pool, task_id, state).await
+    database::update_task_state(pool, task_id, state).await?;
+    let parsed_state: TesState = state.parse().unwrap_or_default();
+    let _ = event_tx.send(TaskEvent {
+        task_id: task_id.to_string(),
+        state: parsed_state,
+    });
+    Ok(())
 }
 
 /// Inner execution flow, separated so we can always do cleanup in the outer fn.
@@ -114,6 +137,7 @@ async fn run_task_inner(
     task_id: &str,
     task: &database::FullTask,
     workspace: &Path,
+    event_tx: &tokio::sync::broadcast::Sender<TaskEvent>,
 ) -> Result<(), RunnerError> {
     // Create workspace
     tokio::fs::create_dir_all(workspace).await?;
@@ -135,6 +159,10 @@ async fn run_task_inner(
 
     // Update state to RUNNING
     database::update_task_state(pool, task_id, "RUNNING").await?;
+    let _ = event_tx.send(TaskEvent {
+        task_id: task_id.to_string(),
+        state: TesState::Running,
+    });
 
     let task_start_time = chrono::Utc::now().to_rfc3339();
     let mut executor_logs: Vec<TesExecutorLog> = Vec::new();
@@ -165,6 +193,7 @@ async fn run_task_inner(
                     &executor_logs,
                     &system_logs,
                     "SYSTEM_ERROR",
+                    event_tx,
                 )
                 .await?;
                 return Err(e);
@@ -218,6 +247,7 @@ async fn run_task_inner(
                             &executor_logs,
                             &system_logs,
                             "EXECUTOR_ERROR",
+                            event_tx,
                         )
                         .await?;
                         return Err(RunnerError::ExecutionFailed(ExecutionFailed));
@@ -239,6 +269,7 @@ async fn run_task_inner(
                         &executor_logs,
                         &system_logs,
                         "SYSTEM_ERROR",
+                        event_tx,
                     )
                     .await?;
                     return Err(e);

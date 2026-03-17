@@ -168,6 +168,83 @@ pub async fn insert_task(pool: &SqlitePool, task: &TesTask) -> Result<String, Da
     Ok(id)
 }
 
+/// Minimal task info for list views.
+pub struct TaskListItem {
+    pub id: String,
+    pub state: TesState,
+    pub name: Option<String>,
+    pub creation_time: String,
+}
+
+/// List tasks with cursor-based pagination, ordered by creation_time DESC.
+/// `page_token` format: "creation_time|id"
+pub async fn list_tasks(
+    pool: &SqlitePool,
+    page_size: i64,
+    page_token: Option<&str>,
+) -> Result<(Vec<TaskListItem>, Option<String>), DatabaseError> {
+    let fetch_limit = page_size + 1;
+
+    let rows: Vec<TaskRow> = if let Some(token) = page_token {
+        let parts: Vec<&str> = token.splitn(2, '|').collect();
+        if parts.len() != 2 {
+            return Ok((Vec::new(), None));
+        }
+        let cursor_time = parts[0];
+        let cursor_id = parts[1];
+        sqlx::query_as::<_, TaskRow>(
+            "SELECT id, state, name, creation_time FROM tasks
+             WHERE (creation_time, id) < (?, ?)
+             ORDER BY creation_time DESC, id DESC
+             LIMIT ?",
+        )
+        .bind(cursor_time)
+        .bind(cursor_id)
+        .bind(fetch_limit)
+        .fetch_all(pool)
+        .await?
+    } else {
+        sqlx::query_as::<_, TaskRow>(
+            "SELECT id, state, name, creation_time FROM tasks
+             ORDER BY creation_time DESC, id DESC
+             LIMIT ?",
+        )
+        .bind(fetch_limit)
+        .fetch_all(pool)
+        .await?
+    };
+
+    let has_more = rows.len() as i64 > page_size;
+    let items: Vec<TaskListItem> = rows
+        .into_iter()
+        .take(page_size as usize)
+        .map(|row| TaskListItem {
+            id: row.id,
+            state: row.state.parse().unwrap_or_default(),
+            name: row.name,
+            creation_time: row.creation_time,
+        })
+        .collect();
+
+    let next_token = if has_more {
+        items
+            .last()
+            .map(|last| format!("{}|{}", last.creation_time, last.id))
+    } else {
+        None
+    };
+
+    Ok((items, next_token))
+}
+
+#[derive(sqlx::FromRow)]
+struct TaskRow {
+    id: String,
+    state: String,
+    name: Option<String>,
+    creation_time: String,
+}
+
 /// Atomically claim the oldest QUEUED task by setting its state to INITIALIZING.
 /// Returns the task id if one was claimed, None if no queued tasks exist.
 pub async fn claim_queued_task(pool: &SqlitePool) -> Result<Option<String>, DatabaseError> {
