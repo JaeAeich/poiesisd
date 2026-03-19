@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}poiesisD{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="/static/pico.min.css">
+    <link rel="stylesheet" href="/static/app.css">
+    <script src="/static/htmx.min.js"></script>
+    <script src="/static/htmx-sse.js"></script>
+    <script src="/static/app.js" defer></script>
+</head>
+<body>
+    <div class="shell" id="shell">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="side-header">
+                <div class="side-title-row">
+                    <span class="side-brand"><b>poiesis</b>D</span>
+                    <div class="side-actions">
+                        <a href="/tasks/new" class="icon-btn" title="New Task (Alt+N)">+</a>
+                        <button class="icon-btn" hx-get="/partials/task-rows" hx-target="#explorer" hx-swap="innerHTML" title="Refresh">R</button>
+                        <button class="icon-btn" onclick="Theme.toggle()" id="theme-btn" title="Toggle theme">D</button>
+                    </div>
+                </div>
+                <div class="side-search">
+                    <input type="text" id="search-input" placeholder="Search tasks..." oninput="Search.onInput(this.value)">
+                    <span class="search-hint">/</span>
+                </div>
+            </div>
+            <div class="explorer" id="explorer"
+                 hx-get="/partials/task-rows"
+                 hx-trigger="load"
+                 hx-swap="innerHTML">
+            </div>
+            <div class="side-footer" id="side-footer"></div>
+        </aside>
+
+        <!-- Main area -->
+        <div class="main-area">
+            <div class="tabbar" id="tabbar">
+                {% block tabs %}{% endblock %}
+            </div>
+
+            <div class="editor-pane" id="editor-pane">
+                {% block content %}{% endblock %}
+            </div>
+
+            <!-- Bottom panel -->
+            <div class="bottom-panel hidden" id="panel" style="height:220px;">
+                <div class="panel-drag" id="panel-drag"></div>
+                <div class="panel-header">
+                    <span class="panel-label">Output</span>
+                    <div class="panel-spacer"></div>
+                    <button class="panel-btn" onclick="Panel.maximize()" title="Maximize">&#9633;</button>
+                    <button class="panel-btn" onclick="Panel.toggle()" title="Close (Ctrl+J)">&times;</button>
+                </div>
+                <div class="panel-body" id="panel-body">
+                    <div class="panel-empty">Select an executor to view logs</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Command palette -->
+    <div class="cmd-overlay" id="cmd-overlay">
+        <div class="cmd-box">
+            <input type="text" id="cmd-input" placeholder="Type a command..." autocomplete="off" oninput="Palette.filter(this.value)">
+            <div class="cmd-list" id="cmd-list"></div>
+        </div>
+    </div>
+</body>
+</html>

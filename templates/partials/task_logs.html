@@ -1,0 +1,52 @@
+{% if task.logs.is_some() %}
+{% for log in task.logs.as_deref().unwrap_or_default() %}
+<div class="log-entry">
+    <div class="log-entry-header">
+        <span>Run {{ loop.index }}</span>
+        <div class="timestamps">
+            {% if log.start_time.is_some() %}<span>Start: {{ log.start_time.as_deref().unwrap_or_default() }}</span>{% endif %}
+            {% if log.end_time.is_some() %}<span>End: {{ log.end_time.as_deref().unwrap_or_default() }}</span>{% endif %}
+        </div>
+    </div>
+
+    {% for elog in log.logs.iter() %}
+    <details class="log-executor"{% if loop.first %} open{% endif %}>
+        <summary>
+            <span class="exec-num" style="width:18px;height:18px;font-size:0.65rem;">{{ loop.index }}</span>
+            Executor {{ loop.index }}
+            <span class="exit-code {% if elog.exit_code == 0 %}exit-ok{% else %}exit-fail{% endif %}">
+                exit {{ elog.exit_code }}
+            </span>
+        </summary>
+        {% if elog.stdout.is_some() %}
+        <div class="log-label">stdout</div>
+        <pre><code>{{ elog.stdout.as_deref().unwrap_or_default() }}</code></pre>
+        {% endif %}
+        {% if elog.stderr.is_some() %}
+        <div class="log-label">stderr</div>
+        <pre><code>{{ elog.stderr.as_deref().unwrap_or_default() }}</code></pre>
+        {% endif %}
+        {% if !elog.stdout.is_some() && !elog.stderr.is_some() %}
+        <div style="padding:0.75rem 1rem;color:var(--text-muted);font-size:0.8rem;"><em>No output captured.</em></div>
+        {% endif %}
+    </details>
+    {% endfor %}
+
+    {% if log.system_logs.is_some() %}
+    <details class="log-executor">
+        <summary>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="flex-shrink:0;"><circle cx="7" cy="7" r="5"/><path d="M7 5v2M7 9h.01"/></svg>
+            System Logs
+        </summary>
+        <pre><code>{% for line in log.system_logs.as_deref().unwrap_or_default() %}{{ line }}
+{% endfor %}</code></pre>
+    </details>
+    {% endif %}
+</div>
+{% endfor %}
+{% else %}
+<div style="text-align:center;padding:2rem;color:var(--text-muted);">
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="margin-bottom:0.5rem;"><path d="M12 8v4M12 16h.01"/><circle cx="12" cy="12" r="10"/></svg>
+    <p style="margin:0;font-size:0.85rem;">No logs available yet. Logs will appear here once the task starts executing.</p>
+</div>
+{% endif %}

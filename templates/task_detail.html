@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}{{ task.name.as_deref().unwrap_or("Task") }} — poiesisD{% endblock %}
+
+{% block tabs %}{% endblock %}
+
+{% block content %}
+<div hx-ext="sse" sse-connect="/tasks/{{ task.id.as_deref().unwrap_or_default() }}/events">
+<div class="task-view">
+    <div class="breadcrumb">tasks / <span>{{ task.id.as_deref().unwrap_or("?") }}</span></div>
+
+    <div class="section">
+        <div class="section-title">Overview</div>
+        <div class="detail-grid">
+            <div class="lbl">Name</div>
+            <div class="val">{{ task.name.as_deref().unwrap_or("Unnamed") }}</div>
+            <div class="lbl">ID</div>
+            <div class="val" style="font-size:11px;">{{ task.id.as_deref().unwrap_or("?") }}</div>
+            <div class="lbl">State</div>
+            <div class="val" id="task-state" sse-swap="state" hx-swap="innerHTML">
+                {% let state = task.state.unwrap_or_default() %}
+                {% include "partials/task_state.html" %}
+            </div>
+            <div class="lbl">Created</div>
+            <div class="val">{{ task.creation_time.as_deref().unwrap_or("-") }}</div>
+            {% if task.description.is_some() %}
+            <div class="lbl">Description</div>
+            <div class="val">{{ task.description.as_deref().unwrap_or_default() }}</div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if task.inputs.is_some() %}
+    <div class="section">
+        <div class="section-title">Inputs</div>
+        <table class="io-table">
+            <thead><tr><th>Path</th><th>URL</th></tr></thead>
+            <tbody>
+            {% for input in task.inputs.as_deref().unwrap_or_default() %}
+            <tr>
+                <td>{{ input.path }}</td>
+                <td>{{ input.url.as_deref().unwrap_or("-") }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    {% if task.outputs.is_some() %}
+    <div class="section">
+        <div class="section-title">Outputs</div>
+        <table class="io-table">
+            <thead><tr><th>Path</th><th>URL</th></tr></thead>
+            <tbody>
+            {% for output in task.outputs.as_deref().unwrap_or_default() %}
+            <tr>
+                <td>{{ output.path }}</td>
+                <td>{{ output.url }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <div class="section">
+        <div class="section-title">Executors ({{ task.executors.len() }})</div>
+        {% for exec in task.executors.iter() %}
+        <div class="exec-card" data-idx="{{ loop.index0 }}" onclick="Logs.showExec('{{ task.id.as_deref().unwrap_or_default() }}', {{ loop.index0 }})">
+            <div class="exec-card-row">
+                <span class="exec-idx">#{{ loop.index0 }}</span>
+                <span class="exec-img">{{ exec.image }}</span>
+                <span class="exec-preview">{{ exec.command.join(" ") }}</span>
+                {% if task.logs.is_some() %}
+                {% let logs = task.logs.as_deref().unwrap_or_default() %}
+                {% if !logs.is_empty() %}
+                {% let exec_logs = &logs[0].logs %}
+                {% if loop.index0 < exec_logs.len() %}
+                {% let elog = &exec_logs[loop.index0] %}
+                {% if elog.exit_code == 0 %}
+                <span class="exec-exit ok">exit 0</span>
+                {% else %}
+                <span class="exec-exit fail">exit {{ elog.exit_code }}</span>
+                {% endif %}
+                {% endif %}
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+        <div style="font-size:11px;color:var(--fg-muted);margin-top:6px;">Click an executor to view logs in the output panel</div>
+    </div>
+</div>
+</div>
+{% endblock %}

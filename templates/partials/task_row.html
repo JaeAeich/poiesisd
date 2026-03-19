@@ -1,0 +1,5 @@
+<a href="/tasks/{{ task.id }}" class="task-item">
+    <span class="dot {{ task.state.to_string().to_lowercase() }}"></span>
+    <span class="name">{{ task.name.as_deref().unwrap_or("Unnamed") }}</span>
+    <span class="id-short">{{ task.id[..8] }}</span>
+</a>

@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}New Task — poiesisD{% endblock %}
+
+{% block tabs %}{% endblock %}
+
+{% block content %}
+<div class="form-view">
+    <form method="post" action="/tasks/new">
+
+        <div class="form-section">
+            <div class="form-section-title">Basics</div>
+            <div class="form-row">
+                <div class="field">
+                    <label for="name">Name</label>
+                    <input type="text" id="name" name="name" placeholder="e.g. align-reads">
+                </div>
+                <div class="field">
+                    <label for="description">Description</label>
+                    <input type="text" id="description" name="description" placeholder="Optional">
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="form-section-title">Executors</div>
+            <div id="executor-fields">
+                <div class="executor-group" data-index="0">
+                    <div class="executor-group-header">
+                        <h4><span class="exec-num">#0</span> Executor</h4>
+                    </div>
+                    <div class="form-row">
+                        <div class="field">
+                            <label>Image <small>(required)</small></label>
+                            <input type="text" name="executor_0_image" placeholder="alpine:latest" required>
+                        </div>
+                        <div class="field">
+                            <label>Workdir</label>
+                            <input type="text" name="executor_0_workdir" placeholder="/workspace">
+                        </div>
+                    </div>
+                    <div class="field full">
+                        <label>Command <small>(space-separated)</small></label>
+                        <input type="text" name="executor_0_command" placeholder="echo hello world" required>
+                    </div>
+                    <details class="collapsible" style="margin-top:6px;">
+                        <summary>Advanced</summary>
+                        <div class="collapsible-body">
+                            <div class="form-row">
+                                <div class="field">
+                                    <label>Stdin</label>
+                                    <input type="text" name="executor_0_stdin" placeholder="/data/input.txt">
+                                </div>
+                                <div class="field">
+                                    <label>Stdout</label>
+                                    <input type="text" name="executor_0_stdout" placeholder="/data/stdout.log">
+                                </div>
+                            </div>
+                            <div class="field">
+                                <label>Stderr</label>
+                                <input type="text" name="executor_0_stderr" placeholder="/data/stderr.log">
+                            </div>
+                            <div class="field">
+                                <label>Env <small>(KEY=VALUE per line)</small></label>
+                                <textarea name="executor_0_env" rows="2" placeholder="FOO=bar"></textarea>
+                            </div>
+                            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--fg-dim);margin-top:3px;">
+                                <input type="checkbox" name="executor_0_ignore_error" value="true" style="width:auto;margin:0;">
+                                Ignore errors
+                            </label>
+                        </div>
+                    </details>
+                </div>
+            </div>
+            <button type="button" class="btn btn-ghost btn-sm"
+                    hx-get="/partials/executor-field"
+                    hx-target="#executor-fields"
+                    hx-swap="beforeend"
+                    style="margin-top:2px;">
+                + Add Executor
+            </button>
+        </div>
+
+        <details class="collapsible">
+            <summary>Inputs / Outputs / Volumes / Tags</summary>
+            <div class="collapsible-body">
+                <div class="form-section" style="margin-bottom:10px;">
+                    <div style="font-size:11px;font-weight:600;color:var(--fg-muted);margin-bottom:6px;">INPUTS</div>
+                    <div class="form-row">
+                        <div class="field">
+                            <label>URL</label>
+                            <input type="text" name="input_0_url" placeholder="s3://bucket/input.txt">
+                        </div>
+                        <div class="field">
+                            <label>Path</label>
+                            <input type="text" name="input_0_path" placeholder="/data/input.txt">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-section" style="margin-bottom:10px;">
+                    <div style="font-size:11px;font-weight:600;color:var(--fg-muted);margin-bottom:6px;">OUTPUTS</div>
+                    <div class="form-row">
+                        <div class="field">
+                            <label>URL</label>
+                            <input type="text" name="output_0_url" placeholder="s3://bucket/output.txt">
+                        </div>
+                        <div class="field">
+                            <label>Path</label>
+                            <input type="text" name="output_0_path" placeholder="/data/output.txt">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="field">
+                        <label>Volumes <small>(one per line)</small></label>
+                        <textarea name="volumes" rows="2" placeholder="/tmp/shared"></textarea>
+                    </div>
+                    <div class="field">
+                        <label>Tags <small>(KEY=VALUE per line)</small></label>
+                        <textarea name="tags" rows="2" placeholder="PROJECT=foo"></textarea>
+                    </div>
+                </div>
+            </div>
+        </details>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Create Task</button>
+            <a href="/" class="btn btn-ghost">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
