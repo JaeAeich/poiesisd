@@ -22,9 +22,7 @@ pub async fn task_events(
         .map(move |event: TaskEvent| {
             let state = event.state;
             let state_lower = state.to_string().to_lowercase();
-            let state_html = format!(
-                "<span class=\"badge badge-{state_lower}\">{state}</span>"
-            );
+            let state_html = format!("<span class=\"badge badge-{state_lower}\">{state}</span>");
 
             Ok(Event::default().event("state").data(state_html))
         });

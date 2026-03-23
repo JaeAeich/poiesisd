@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
 use askama::Template;
+use axum::Form;
 use axum::extract::State;
 use axum::response::{Html, Redirect};
-use axum::Form;
 use sqlx::SqlitePool;
 
 use crate::database;
@@ -15,7 +15,10 @@ struct TaskFormTemplate;
 
 pub async fn task_form() -> Html<String> {
     let tmpl = TaskFormTemplate;
-    Html(tmpl.render().unwrap_or_else(|e| format!("Template error: {e}")))
+    Html(
+        tmpl.render()
+            .unwrap_or_else(|e| format!("Template error: {e}")),
+    )
 }
 
 pub async fn create_task(
@@ -53,10 +56,7 @@ fn parse_task_form(form: &HashMap<String, String>) -> Result<TesTask, String> {
             .filter(|s| !s.is_empty())
             .ok_or_else(|| format!("executor {i}: command is required"))?;
 
-        let command: Vec<String> = command_str
-            .split_whitespace()
-            .map(String::from)
-            .collect();
+        let command: Vec<String> = command_str.split_whitespace().map(String::from).collect();
 
         let workdir = form
             .get(&format!("executor_{i}_workdir"))
@@ -206,7 +206,11 @@ fn parse_task_form(form: &HashMap<String, String>) -> Result<TesTask, String> {
         name,
         description,
         executors,
-        inputs: if inputs.is_empty() { None } else { Some(inputs) },
+        inputs: if inputs.is_empty() {
+            None
+        } else {
+            Some(inputs)
+        },
         outputs: if outputs.is_empty() {
             None
         } else {

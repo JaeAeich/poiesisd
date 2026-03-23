@@ -28,8 +28,10 @@ pub async fn static_file(Path(path): Path<String>) -> impl IntoResponse {
     };
 
     Ok((
-        [(header::CONTENT_TYPE, content_type),
-         (header::CACHE_CONTROL, "public, max-age=86400")],
+        [
+            (header::CONTENT_TYPE, content_type),
+            (header::CACHE_CONTROL, "public, max-age=86400"),
+        ],
         content,
     ))
 }

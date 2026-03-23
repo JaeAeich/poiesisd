@@ -33,6 +33,10 @@ pre-commit:
       run: typos
       stage_fixed: true
 
+    biome:
+      glob: "*.{js,css,html}"
+      run: biome check --no-errors-on-unmatched {staged_files}
+
 commit-msg:
   commands:
     commitlint:

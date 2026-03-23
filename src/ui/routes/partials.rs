@@ -67,5 +67,8 @@ pub async fn executor_field_partial(Query(query): Query<ExecutorFieldQuery>) -> 
     // The frontend should pass the next index, defaulting to 1
     let index = query.index.unwrap_or(1);
     let tmpl = ExecutorFieldTemplate { index };
-    Html(tmpl.render().unwrap_or_else(|e| format!("Template error: {e}")))
+    Html(
+        tmpl.render()
+            .unwrap_or_else(|e| format!("Template error: {e}")),
+    )
 }

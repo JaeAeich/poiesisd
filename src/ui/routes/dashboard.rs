@@ -7,5 +7,8 @@ struct DashboardTemplate;
 
 pub async fn dashboard() -> Html<String> {
     let tmpl = DashboardTemplate;
-    Html(tmpl.render().unwrap_or_else(|e| format!("Template error: {e}")))
+    Html(
+        tmpl.render()
+            .unwrap_or_else(|e| format!("Template error: {e}")),
+    )
 }

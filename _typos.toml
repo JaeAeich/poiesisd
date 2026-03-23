@@ -1,0 +1,6 @@
+[files]
+extend-exclude = [
+  "static/htmx-sse.js",
+  "static/htmx.min.js",
+  "static/pico.min.css",
+]

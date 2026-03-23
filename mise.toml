@@ -29,6 +29,7 @@ run         = "docker compose up -d"
 
 [tools]
 lefthook                              = "2.1.1"
+"npm:@biomejs/biome"                  = "latest"
 "npm:@commitlint/cli"                 = "20.4.1"
 "npm:@commitlint/config-conventional" = "20.4.1"
 "npm:eclint"                          = "2.8.1"

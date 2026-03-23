@@ -6,7 +6,9 @@ use sqlx::SqlitePool;
 use tokio::task::JoinHandle;
 
 use crate::database;
-use crate::dto::{TesExecutor, TesExecutorLog, TesInput, TesOutput, TesOutputFileLog, TesState, TesTaskLog};
+use crate::dto::{
+    TesExecutor, TesExecutorLog, TesInput, TesOutput, TesOutputFileLog, TesState, TesTaskLog,
+};
 use crate::events::TaskEvent;
 use crate::filer::util::resolve_workspace_path;
 use crate::filer::{Filer, S3Backend};
@@ -43,7 +45,8 @@ impl Worker {
                             task_id: task_id.clone(),
                             state: TesState::Initializing,
                         });
-                        if let Err(e) = run_task(&pool, &filer, &docker, &task_id, &event_tx).await {
+                        if let Err(e) = run_task(&pool, &filer, &docker, &task_id, &event_tx).await
+                        {
                             tracing::error!(task_id = %task_id, error = %e, "task failed");
                         }
                     }
