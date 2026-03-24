@@ -14,6 +14,7 @@ use crate::dto::{
     TesServiceType, TesTask, TesView,
 };
 
+#[utoipa::path(get, path = "/ga4gh/tes/v1/service-info", responses((status = 200, body = TesServiceInfo)))]
 pub async fn service_info(
     Extension(config): Extension<Arc<ServiceConfig>>,
 ) -> Json<TesServiceInfo> {
@@ -26,6 +27,7 @@ pub async fn service_info(
     ))
 }
 
+#[utoipa::path(post, path = "/ga4gh/tes/v1/tasks", request_body = TesTask, responses((status = 200, body = TesCreateTaskResponse)))]
 pub async fn create_task(
     State(pool): State<SqlitePool>,
     Json(task): Json<TesTask>,
@@ -59,6 +61,7 @@ fn default_page_size() -> i64 {
     100
 }
 
+#[utoipa::path(get, path = "/ga4gh/tes/v1/tasks", params(("page_size" = Option<i64>, Query, description = "Page size"), ("page_token" = Option<String>, Query, description = "Page token")), responses((status = 200, body = TesListTasksResponse)))]
 pub async fn list_tasks(
     State(pool): State<SqlitePool>,
     Query(query): Query<ListQuery>,
@@ -83,6 +86,7 @@ pub async fn list_tasks(
     Ok(Json(resp))
 }
 
+#[utoipa::path(get, path = "/ga4gh/tes/v1/tasks/{id}", params(("id" = String, Path, description = "Task ID"), ("view" = Option<String>, Query, description = "MINIMAL, BASIC, or FULL")), responses((status = 200, body = TesTask)))]
 pub async fn get_task(
     State(pool): State<SqlitePool>,
     Path(id): Path<String>,
