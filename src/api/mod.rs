@@ -23,6 +23,7 @@ use crate::ui;
         crate::api::routes::tasks::create_task,
         crate::api::routes::tasks::list_tasks,
         crate::api::routes::tasks::get_task,
+        crate::api::routes::tasks::cancel_task,
     ),
     components(schemas(
         dto::TesTask,
@@ -76,7 +77,10 @@ pub fn router(
             "/ga4gh/tes/v1/tasks",
             get(routes::list_tasks).post(routes::create_task),
         )
-        .route("/ga4gh/tes/v1/tasks/{id}", get(routes::get_task))
+        .route(
+            "/ga4gh/tes/v1/tasks/{id}",
+            get(routes::get_task).post(routes::cancel_task),
+        )
         .route("/ga4gh/tes/v1/service-info", get(routes::service_info))
         .route("/docs", get(serve_docs))
         .route("/docs/openapi.json", get(serve_openapi))

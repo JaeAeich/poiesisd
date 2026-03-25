@@ -176,43 +176,94 @@ pub struct TaskListItem {
     pub creation_time: String,
 }
 
-/// List tasks with cursor-based pagination, ordered by creation_time DESC.
+/// Filter options for listing tasks.
+#[derive(Default)]
+pub struct ListFilter<'a> {
+    pub name_prefix: Option<&'a str>,
+    pub state: Option<&'a str>,
+    pub tag_key: Option<Vec<&'a str>>,
+    pub tag_value: Option<Vec<&'a str>>,
+}
+
+/// List tasks with cursor-based pagination and optional filtering.
 /// `page_token` format: "creation_time|id"
 pub async fn list_tasks(
     pool: &SqlitePool,
     page_size: i64,
     page_token: Option<&str>,
+    filter: &ListFilter<'_>,
 ) -> Result<(Vec<TaskListItem>, Option<String>), DatabaseError> {
     let fetch_limit = page_size + 1;
 
-    let rows: Vec<TaskRow> = if let Some(token) = page_token {
+    // Build dynamic query
+    let mut sql = String::from("SELECT t.id, t.state, t.name, t.creation_time FROM tasks t");
+    let mut conditions: Vec<String> = Vec::new();
+    let mut binds: Vec<String> = Vec::new();
+
+    // Tag filtering: each key[i] must match.
+    // If value[i] exists, match key=value; otherwise just match key existence.
+    // Use subqueries so ALL tag conditions must be satisfied.
+    if let Some(keys) = filter.tag_key.as_ref() {
+        let values = filter.tag_value.as_ref();
+        for (i, key) in keys.iter().enumerate() {
+            let has_value = values.and_then(|v| v.get(i)).filter(|v| !v.is_empty());
+            if let Some(val) = has_value {
+                conditions.push(
+                    "EXISTS (SELECT 1 FROM task_tags tt WHERE tt.task_id = t.id AND tt.tag_key = ? AND tt.tag_value = ?)"
+                        .to_string(),
+                );
+                binds.push(key.to_string());
+                binds.push(val.to_string());
+            } else {
+                conditions.push(
+                    "EXISTS (SELECT 1 FROM task_tags tt WHERE tt.task_id = t.id AND tt.tag_key = ?)"
+                        .to_string(),
+                );
+                binds.push(key.to_string());
+            }
+        }
+    }
+
+    // Name prefix filter
+    if let Some(prefix) = filter.name_prefix {
+        conditions.push("t.name LIKE ?".to_string());
+        binds.push(format!("{prefix}%"));
+    }
+
+    // State filter
+    if let Some(state) = filter.state {
+        conditions.push("t.state = ?".to_string());
+        binds.push(state.to_string());
+    }
+
+    // Cursor pagination
+    if let Some(token) = page_token {
         let parts: Vec<&str> = token.splitn(2, '|').collect();
         if parts.len() != 2 {
             return Ok((Vec::new(), None));
         }
-        let cursor_time = parts[0];
-        let cursor_id = parts[1];
-        sqlx::query_as::<_, TaskRow>(
-            "SELECT id, state, name, creation_time FROM tasks
-             WHERE (creation_time, id) < (?, ?)
-             ORDER BY creation_time DESC, id DESC
-             LIMIT ?",
-        )
-        .bind(cursor_time)
-        .bind(cursor_id)
-        .bind(fetch_limit)
-        .fetch_all(pool)
-        .await?
-    } else {
-        sqlx::query_as::<_, TaskRow>(
-            "SELECT id, state, name, creation_time FROM tasks
-             ORDER BY creation_time DESC, id DESC
-             LIMIT ?",
-        )
-        .bind(fetch_limit)
-        .fetch_all(pool)
-        .await?
-    };
+        conditions.push("(t.creation_time, t.id) < (?, ?)".to_string());
+        binds.push(parts[0].to_string());
+        binds.push(parts[1].to_string());
+    }
+
+    if !conditions.is_empty() {
+        sql.push_str(" WHERE ");
+        sql.push_str(&conditions.join(" AND "));
+    }
+
+    sql.push_str(" ORDER BY t.creation_time DESC, t.id DESC LIMIT ?");
+    binds.push(fetch_limit.to_string());
+
+    // Execute with dynamic binds
+    let mut query = sqlx::query_as::<_, TaskRow>(&sql);
+    for b in &binds[..binds.len() - 1] {
+        query = query.bind(b);
+    }
+    // Last bind is the limit (integer)
+    query = query.bind(fetch_limit);
+
+    let rows: Vec<TaskRow> = query.fetch_all(pool).await?;
 
     let has_more = rows.len() as i64 > page_size;
     let items: Vec<TaskListItem> = rows
@@ -235,6 +286,19 @@ pub async fn list_tasks(
     };
 
     Ok((items, next_token))
+}
+
+/// Cancel a task by setting its state to CANCELED.
+/// Only cancels tasks in non-terminal states.
+pub async fn cancel_task(pool: &SqlitePool, task_id: &str) -> Result<bool, DatabaseError> {
+    let result = sqlx::query!(
+        "UPDATE tasks SET state = 'CANCELED'
+         WHERE id = ? AND state IN ('QUEUED', 'INITIALIZING', 'RUNNING', 'PAUSED')",
+        task_id,
+    )
+    .execute(pool)
+    .await?;
+    Ok(result.rows_affected() > 0)
 }
 
 #[derive(sqlx::FromRow)]

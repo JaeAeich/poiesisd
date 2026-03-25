@@ -27,9 +27,11 @@ pub async fn task_rows_partial(
     State(pool): State<SqlitePool>,
     Query(query): Query<TaskRowsQuery>,
 ) -> Html<String> {
-    let (tasks, next_page_token) = database::list_tasks(&pool, 25, query.page_token.as_deref())
-        .await
-        .unwrap_or_default();
+    let filter = database::ListFilter::default();
+    let (tasks, next_page_token) =
+        database::list_tasks(&pool, 25, query.page_token.as_deref(), &filter)
+            .await
+            .unwrap_or_default();
 
     let mut html = String::new();
     for task in &tasks {

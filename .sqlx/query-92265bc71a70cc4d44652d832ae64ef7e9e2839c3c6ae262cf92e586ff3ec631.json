@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE tasks SET state = 'CANCELED'\n         WHERE id = ? AND state IN ('QUEUED', 'INITIALIZING', 'RUNNING', 'PAUSED')",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "92265bc71a70cc4d44652d832ae64ef7e9e2839c3c6ae262cf92e586ff3ec631"
+}

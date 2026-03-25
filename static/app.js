@@ -725,6 +725,29 @@ const Logs = (() => {
 })();
 
 /* ====================================================================
+   TASKS — cancel action
+   ==================================================================== */
+function cancelTask(taskId) {
+  if (!window.confirm('Cancel this task?')) return;
+  fetch(`/ga4gh/tes/v1/tasks/${taskId}:cancel`, { method: 'POST' })
+    .then((r) => {
+      if (r.ok) {
+        window.location.reload();
+      } else {
+        r.text().then((t) => {
+          window.alert(`Cancel failed: ${t}`);
+        });
+      }
+    })
+    .catch(() => {
+      window.alert('Cancel request failed');
+    });
+}
+
+// eslint-disable-next-line no-unused-vars -- used by inline onclick in templates
+window.cancelTask = cancelTask;
+
+/* ====================================================================
    INIT
    ==================================================================== */
 document.addEventListener('DOMContentLoaded', () => {

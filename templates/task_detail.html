@@ -28,6 +28,11 @@
             <div class="val">{{ task.description.as_deref().unwrap_or_default() }}</div>
             {% endif %}
         </div>
+        {% let state = task.state.unwrap_or_default() %}
+        {% let state_str = state.to_string() %}
+        {% if state_str == "QUEUED" || state_str == "INITIALIZING" || state_str == "RUNNING" || state_str == "PAUSED" %}
+        <button class="btn btn-cancel" onclick="cancelTask('{{ task.id.as_deref().unwrap_or_default() }}')">Cancel Task</button>
+        {% endif %}
     </div>
 
     {% if task.inputs.is_some() %}

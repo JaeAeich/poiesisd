@@ -1200,6 +1200,20 @@ body {
   font-size: 11px;
 }
 
+.btn-cancel {
+  background: none;
+  color: var(--red);
+  border-color: color-mix(in srgb, var(--red) 30%, transparent);
+  font-size: 11px;
+  padding: 4px 12px;
+  margin-top: 8px;
+}
+
+.btn-cancel:hover {
+  background: color-mix(in srgb, var(--red) 12%, transparent);
+  border-color: var(--red);
+}
+
 /* ---- Command palette ---- */
 .cmd-overlay {
   position: fixed;
